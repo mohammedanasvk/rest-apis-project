@@ -1,4 +1,4 @@
-#!/bin/sh
+#!C:\"Program Files"\Git\bin\sh
 
 flask db upgrade
 
