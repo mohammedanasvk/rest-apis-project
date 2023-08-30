@@ -6,6 +6,7 @@ from blocklist import BLOCKLIST
 from flask_migrate import Migrate
 from db import db
 import model
+from dotenv import load_dotenv
 
 from resources.item import blp as ItemBlueprint
 from resources.store import blp as StoreBlueprint
@@ -15,6 +16,7 @@ from resources.user import blp as UserBluePrint
 
 def create_app(db_url=None):
     app=Flask(__name__)
+    load_dotenv()
     app.config["PROPAGATE_EXCEPTIONS"]=True
     app.config["API_TITLE"]="Stores REST API"
     app.config["API_VERSION"]="v1"
