@@ -1,12 +1,17 @@
 from sqlite3 import IntegrityError
 from flask.views import MethodView
 from flask_smorest import Blueprint,abort
+from flask import current_app
 from db import db
 from model import UserModel
-from schemas import UserSchema
+from schemas import UserSchema, UserRegisterSchema
 from sqlalchemy.exc import SQLAlchemyError
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt, create_refresh_token,get_jwt_identity
 from blocklist import BLOCKLIST
+import requests
+import os
+from sqlalchemy import or_
+from tasks import send_user_registration_email
 
 from passlib.hash import pbkdf2_sha256
 
@@ -14,16 +19,18 @@ blp=Blueprint("users",__name__,description="operation on users")
 
 @blp.route("/register")
 class UserRegister(MethodView):
-    @blp.arguments(UserSchema)
+    @blp.arguments(UserRegisterSchema)
     def post(self,user_data):
 
-        user=UserModel(username=user_data["username"],password=pbkdf2_sha256.hash(user_data["password"]))
+        user=UserModel(username=user_data["username"],email=user_data["email"],password=pbkdf2_sha256.hash(user_data["password"]))
 
         try:
             db.session.add(user)
             db.session.commit()
+
+            current_app.queue.enqueue(send_user_registration_email,user.email,user.username)
         except IntegrityError:
-            abort(409,"A user with given username already exists")
+            abort(409,"A user with given username or email already exists")
         
         return {"message":"User created successfully"},201
     
